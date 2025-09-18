@@ -6,7 +6,27 @@ Unit tests for utils.py
 import unittest
 from unittest.mock import patch, Mock
 from parameterized import parameterized
-from utils import get_json, memoize
+from utils import get_json, memoize, access_nested_map
+
+
+class TestAccessNestedMap(unittest.TestCase):
+    """Test case for the access_nested_map function."""
+
+    @parameterized.expand([
+        ({"a": 1}, ("a",), 1),
+        ({"a": {"b": 2}}, ("a",), {"b": 2}),
+        ({"a": {"b": 2}}, ("a", "b"), 2),
+    ])
+    def test_access_nested_map(self, nested_map, path, expected):
+        """
+        Test that access_nested_map returns expected result.
+
+        Args:
+            nested_map (dict): the dictionary to test.
+            path (tuple): keys path to follow.
+            expected (any): expected value at the path.
+        """
+        self.assertEqual(access_nested_map(nested_map, path), expected)
 
 
 class TestGetJson(unittest.TestCase):
@@ -18,21 +38,18 @@ class TestGetJson(unittest.TestCase):
     ])
     def test_get_json(self, test_url, test_payload):
         """
-        Test that utils.get_json returns the expected result.
+        Test that get_json returns the expected payload.
 
         Args:
             test_url (str): the URL to mock.
-            test_payload (dict): the expected JSON payload.
+            test_payload (dict): JSON data to return.
         """
         mock_response = Mock()
         mock_response.json.return_value = test_payload
 
         with patch("utils.requests.get", return_value=mock_response) as mock_get:
             result = get_json(test_url)
-
-            # Check that requests.get was called exactly once with test_url
             mock_get.assert_called_once_with(test_url)
-            # Check that the result is equal to test_payload
             self.assertEqual(result, test_payload)
 
 
@@ -43,7 +60,7 @@ class TestMemoize(unittest.TestCase):
         """Test that memoize caches the result of a method."""
 
         class TestClass:
-            """Class to test memoization."""
+            """Class to test memoization behavior."""
 
             def a_method(self):
                 """Return a constant value."""
@@ -51,7 +68,18 @@ class TestMemoize(unittest.TestCase):
 
             @memoize
             def a_property(self):
-                """Return a_method, cached after first call."""
+                """Return cached result of a_method."""
                 return self.a_method()
 
-        with
+        with patch.object(TestClass, "a_method", return_value=42) as mock_method:
+            obj = TestClass()
+            first = obj.a_property
+            second = obj.a_property
+
+            self.assertEqual(first, 42)
+            self.assertEqual(second, 42)
+            mock_method.assert_called_once()
+
+
+if __name__ == "__main__":
+    unittest.main()
