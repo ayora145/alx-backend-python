@@ -17,7 +17,13 @@ class TestGetJson(unittest.TestCase):
         ("http://holberton.io", {"payload": False}),
     ])
     def test_get_json(self, test_url, test_payload):
-        """Test that utils.get_json returns the expected result."""
+        """
+        Test that utils.get_json returns the expected result.
+
+        Args:
+            test_url (str): the URL to mock.
+            test_payload (dict): the expected JSON payload.
+        """
         mock_response = Mock()
         mock_response.json.return_value = test_payload
 
@@ -37,27 +43,15 @@ class TestMemoize(unittest.TestCase):
         """Test that memoize caches the result of a method."""
 
         class TestClass:
+            """Class to test memoization."""
+
             def a_method(self):
+                """Return a constant value."""
                 return 42
 
             @memoize
             def a_property(self):
+                """Return a_method, cached after first call."""
                 return self.a_method()
 
-        with patch.object(TestClass, "a_method", return_value=42) as mock_method:
-            obj = TestClass()
-
-            # Call twice
-            first = obj.a_property
-            second = obj.a_property
-
-            # Both should return the same result
-            self.assertEqual(first, 42)
-            self.assertEqual(second, 42)
-
-            # a_method should only be called once due to memoization
-            mock_method.assert_called_once()
-
-
-if __name__ == "__main__":
-    unittest.main()
+        with
