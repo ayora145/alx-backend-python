@@ -1,11 +1,12 @@
-# chats/filters.py
 import django_filters
 from .models import Message
 
 class MessageFilter(django_filters.FilterSet):
-    sender = django_filters.CharFilter(field_name="sender__username", lookup_expr="icontains")
-    date_range = django_filters.DateFromToRangeFilter(field_name="created_at")
+    sender = django_filters.NumberFilter(field_name="sender__id", lookup_expr="exact")
+    recipient = django_filters.NumberFilter(field_name="conversation__participants__id", lookup_expr="exact")
+    start_date = django_filters.DateTimeFilter(field_name="timestamp", lookup_expr="gte")
+    end_date = django_filters.DateTimeFilter(field_name="timestamp", lookup_expr="lte")
 
     class Meta:
         model = Message
-        fields = ["sender", "date_range"]
+        fields = ["sender", "recipient", "start_date", "end_date"]
