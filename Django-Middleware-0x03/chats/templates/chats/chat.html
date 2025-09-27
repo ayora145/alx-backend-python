@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat App</title>
+</head>
+<body>
+    <h1>Chat Messages</h1>
+    
+    <div id="messages">
+        {% for message in messages %}
+            <div>
+                <strong>{{ message.user.username }}</strong> ({{ message.timestamp }}): {{ message.content }}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="content" placeholder="Type your message..." required>
+        <button type="submit">Send</button>
+    </form>
+    
+    <a href="{% url 'admin:index' %}">Admin</a> | 
+    <a href="/accounts/logout/">Logout</a>
+</body>
+</html>
