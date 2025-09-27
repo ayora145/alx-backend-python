@@ -33,3 +33,5 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("chats/", include("messaging_app.chats.urls")),  # your chat app routes
 ]
+
+
