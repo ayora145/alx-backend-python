@@ -12,6 +12,11 @@ class UnreadMessagesManager(models.Manager):
 
 
 class Message(models.Model):
+    is_read = models.BooleanField(default=False)
+    
+    # Attach the custom manager
+    objects = models.Manager()  # Default manager
+    unread = UnreadMessagesManager()  # Custom manager
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_messages")
     content = models.TextField()
@@ -66,3 +71,5 @@ class MessageHistory(models.Model):
             replies.append(reply)
             replies.extend(reply.get_all_replies())  # recursion
         return replies
+
+
