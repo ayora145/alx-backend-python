@@ -20,3 +20,9 @@ def conversation_messages(request, conversation_id):
     return render(request, 'chats/conversation_messages.html', {'messages': messages})
 
 
+@login_required
+def inbox(request):
+    """Display only unread messages in user's inbox using custom manager"""
+    # Use custom manager with .only() optimization
+    unread_messages = Message.unread.for_user(request.user)
+    return render(request, 'messaging/inbox.html', {'messages': unread_messages})
