@@ -1,14 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from .managers import UnreadMessagesManager
 
 # Create your models here.
-
-# ✅ Custom Manager
-class UnreadMessagesManager(models.Manager):
-    def for_user(self, user):
-        # Return only unread messages for a given user (received messages)
-        return self.filter(receiver=user, is_read=False).only("id", "content", "timestamp", "sender")
-        # `.only()` makes query faster by fetching only necessary fields
 
 
 class Message(models.Model):
