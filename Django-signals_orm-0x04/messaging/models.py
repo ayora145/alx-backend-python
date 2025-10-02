@@ -6,8 +6,8 @@ from django.contrib.auth.models import User
 # ✅ Custom Manager
 class UnreadMessagesManager(models.Manager):
     def for_user(self, user):
-        # Return only unread messages for a given user
-        return self.filter(user=user, read=False).only("id", "content", "created_at")
+        # Return only unread messages for a given user (received messages)
+        return self.filter(receiver=user, is_read=False).only("id", "content", "timestamp", "sender")
         # `.only()` makes query faster by fetching only necessary fields
 
 
@@ -17,9 +17,29 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     edited = models.BooleanField(default=False)
+    is_read = models.BooleanField(default=False)
+    parent_message = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='replies'
+    )
+    
+    # Attach the custom manager
+    objects = models.Manager()  # Default manager
+    unread = UnreadMessagesManager()  # Custom manager
 
     def __str__(self):
-        return f"{self.user}: {self.content[:20]}"
+        return f"{self.sender.username}: {self.content[:30]}"
+    
+    # ✅ Recursive function to fetch threaded replies
+    def get_all_replies(self):
+        replies = []
+        for reply in self.replies.all().select_related('sender').prefetch_related('replies'):
+            replies.append(reply)
+            replies.extend(reply.get_all_replies())  # recursion
+        return replies
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
@@ -38,31 +58,3 @@ class MessageHistory(models.Model):
     def __str__(self):
         return f"History of {self.message.id} at {self.edited_at}"
 
-
-# ✅ New field for threaded replies
-    parent_message = models.ForeignKey(
-        'self',
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name='replies'
-    )
-
-      # ✅ New field for read/unread
-    read = models.BooleanField(default=False)
-
-    # Attach the custom manager
-    objects = models.Manager()  # Default manager
-    unread = UnreadMessagesManager()  # Custom manager
-
-
-    def __str__(self):
-        return f"{self.user.username}: {self.content[:30]}"
-
-    # ✅ Recursive function to fetch threaded replies
-    def get_all_replies(self):
-        replies = []
-        for reply in self.replies.all().select_related('user').prefetch_related('replies'):
-            replies.append(reply)
-            replies.extend(reply.get_all_replies())  # recursion
-        return replies

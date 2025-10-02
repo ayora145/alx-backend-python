@@ -1,7 +1,4 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.shortcuts import redirect
+from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page
@@ -9,10 +6,19 @@ from .models import Message
 
 
 @login_required
+def inbox(request):
+    """Display only unread messages in user's inbox using custom manager"""
+    # Use custom manager with .only() optimization
+    unread_messages = Message.unread.for_user(request.user)
+    return render(request, 'messaging/inbox.html', {'messages': unread_messages})
+
+
+@login_required
 def delete_user(request):
     user = request.user
     user.delete()  # This triggers post_delete signal
     return redirect('home')  # redirect to homepage or goodbye page
+
 
 @cache_page(60)  # cache for 60 seconds
 def conversation_messages(request, conversation_id):
