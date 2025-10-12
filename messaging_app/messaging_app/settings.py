@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +27,7 @@ SECRET_KEY = 'django-insecure-o84&0_y8(cip^^nar4v0b7_@8i@0x-$wjw%qgsufd#t-^5n05i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -89,8 +91,12 @@ WSGI_APPLICATION = 'messaging_app.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': config('DB_NAME', default='messaging_app_db'),
+        'USER': config('DB_USER', default='messaging_user'),
+        'PASSWORD': config('DB_PASSWORD', default='messaging_password'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': '3306',
     }
 }
 
