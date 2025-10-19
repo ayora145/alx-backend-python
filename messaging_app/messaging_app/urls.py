@@ -21,12 +21,14 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from chats.health import health_check
 
 def root_redirect(request):
     return redirect('/api/')
 
 urlpatterns = [
     path('', root_redirect),
+    path('health/', health_check, name='health_check'),
     path('admin/', admin.site.urls),
     path('api/', include('chats.urls')),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

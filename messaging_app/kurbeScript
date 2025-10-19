@@ -1,0 +1,22 @@
+#!/bin/bash
+# kurbeScript - Setup a local Kubernetes cluster using Minikube
+
+echo "🚀 Starting Minikube cluster..."
+minikube start
+
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to start Minikube. Please check your setup."
+  exit 1
+fi
+
+echo "✅ Cluster started successfully!"
+echo "----------------------------------------"
+echo "🔍 Verifying cluster info..."
+kubectl cluster-info
+
+echo "----------------------------------------"
+echo "📋 Listing available pods..."
+kubectl get pods --all-namespaces
+
+echo "✅ Kubernetes local cluster setup complete!"
+
