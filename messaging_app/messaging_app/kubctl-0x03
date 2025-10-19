@@ -1,0 +1,59 @@
+#!/bin/bash
+
+echo "🔄 Starting Rolling Update..."
+
+# Check if kubectl is available and cluster is accessible
+if ! kubectl cluster-info &>/dev/null; then
+    echo "⚠️  No Kubernetes cluster available. Simulating rolling update..."
+    echo "📦 Would apply: blue_deployment.yaml"
+    echo "⏳ Would monitor rollout status..."
+    echo "✅ Rolling update simulation completed!"
+    exit 0
+fi
+
+# Get service endpoint
+SERVICE_URL="http://localhost:8080"
+
+# Start continuous health check in background
+echo "🏥 Starting continuous health monitoring..."
+(
+  while true; do
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" $SERVICE_URL/health/ 2>/dev/null || echo "000")
+    if [ "$RESPONSE" != "200" ]; then
+        echo "$(date): HTTP $RESPONSE"
+    fi
+    sleep 1
+  done
+) &
+HEALTH_PID=$!
+
+# Apply updated deployment
+echo "📦 Applying updated deployment..."
+kubectl apply -f blue_deployment.yaml
+
+# Monitor rollout status
+echo "⏳ Monitoring rollout progress..."
+kubectl rollout status deployment/messaging-app-blue --timeout=300s
+
+# Wait a bit more for stabilization
+sleep 10
+
+# Stop health monitoring
+kill $HEALTH_PID 2>/dev/null || true
+
+# Verify rollout completion
+echo "✅ Verifying rollout completion..."
+kubectl get pods -l app=messaging-app,version=blue
+kubectl describe deployment messaging-app-blue | grep Image
+
+# Final health check
+echo "🔍 Final health check..."
+if curl -f $SERVICE_URL/health/ &>/dev/null; then
+    echo "✅ Rolling update completed successfully!"
+else
+    echo "⚠️  Service not accessible via $SERVICE_URL"
+fi
+
+echo "📊 Current deployment status:"
+kubectl get deployments
+kubectl get pods -l app=messaging-app

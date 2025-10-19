@@ -1,0 +1,37 @@
+#!/bin/bash
+# Script: kubctl-0x01
+# Purpose: Scale Django deployment, verify pods, perform load testing, and monitor resources
+
+set -e  # Exit immediately if a command fails
+
+DEPLOYMENT_NAME="django-messaging-deployment"
+SERVICE_NAME="django-messaging-service"
+NAMESPACE="default"
+
+echo "🚀 Scaling Django app to 3 replicas..."
+kubectl scale deployment $DEPLOYMENT_NAME --replicas=3 -n $NAMESPACE
+
+echo "✅ Waiting for pods to be ready..."
+kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
+
+echo "📋 Verifying running pods..."
+kubectl get pods -n $NAMESPACE
+
+echo "🌐 Setting up port forwarding for testing..."
+kubectl port-forward svc/$SERVICE_NAME 8080:8000 -n $NAMESPACE &
+PORT_FORWARD_PID=$!
+sleep 5
+URL="http://localhost:8080"
+
+echo "🔍 Testing load on the scaled app using wrk..."
+wrk -t4 -c100 -d30s $URL
+
+echo "📊 Monitoring resource usage (pods and nodes)..."
+kubectl top pods -n $NAMESPACE
+kubectl top nodes
+
+# Clean up port forwarding
+kill $PORT_FORWARD_PID 2>/dev/null || true
+
+echo "✅ Done! Your Django app has been scaled and tested successfully."
+
