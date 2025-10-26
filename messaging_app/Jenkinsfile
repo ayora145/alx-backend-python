@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
+        GITHUB_CREDENTIALS = credentials('github-credentials')
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', 
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/ayora145/alx-backend-python.git'
+            }
+        }
+        
+        stage('Setup Environment') {
+            steps {
+                sh '''
+                    cd messaging_app
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                sh '''
+                    cd messaging_app
+                    . venv/bin/activate
+                    python manage.py test
+                    pytest --junitxml=test-results.xml --cov=. --cov-report=xml
+                '''
+            }
+            post {
+                always {
+                    publishTestResults testResultsPattern: 'messaging_app/test-results.xml'
+                    publishCoverage adapters: [coberturaAdapter('messaging_app/coverage.xml')]
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    cd messaging_app
+                    docker build -t messaging-app:${BUILD_NUMBER} .
+                    docker tag messaging-app:${BUILD_NUMBER} ${DOCKER_HUB_CREDENTIALS_USR}/messaging-app:${BUILD_NUMBER}
+                    docker tag messaging-app:${BUILD_NUMBER} ${DOCKER_HUB_CREDENTIALS_USR}/messaging-app:latest
+                '''
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                sh '''
+                    echo $DOCKER_HUB_CREDENTIALS_PSW | docker login -u $DOCKER_HUB_CREDENTIALS_USR --password-stdin
+                    docker push ${DOCKER_HUB_CREDENTIALS_USR}/messaging-app:${BUILD_NUMBER}
+                    docker push ${DOCKER_HUB_CREDENTIALS_USR}/messaging-app:latest
+                '''
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
